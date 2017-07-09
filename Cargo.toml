@@ -1,0 +1,13 @@
+[package]
+name = "tribool"
+version = "0.1.0"
+authors = ["Aaron Trent <novacrazy@gmail.com>"]
+description = "Tribool - Three-valued logic"
+documentation = "https://docs.rs/tribool/"
+include = ["src/**/*", "Cargo.toml"]
+keywords = ["tribool", "logic"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/novacrazy/rust-tribool"
+
+[dependencies]
