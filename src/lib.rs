@@ -9,7 +9,9 @@
 //! For more information and the full truth tables of this implementation, see
 //! [the Wikipedia page](https://en.wikipedia.org/wiki/Three-valued_logic)
 
-use std::ops::{Not, BitAnd, BitOr, BitXor};
+use std::ops::{Not, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign};
+use std::str::FromStr;
+use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// Three-state Boolean logic
 #[derive(Debug, Clone, Copy, Hash)]
@@ -23,6 +25,22 @@ pub enum Tribool {
 }
 
 pub use Tribool::{True, False, Indeterminate};
+
+impl Default for Tribool {
+    #[inline]
+    fn default() -> Tribool { Tribool::False }
+}
+
+impl FromStr for Tribool {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Tribool, ()> {
+        Ok(match bool::from_str(s) {
+            Ok(b) => Tribool::from(b),
+            _ => Indeterminate
+        })
+    }
+}
 
 impl Tribool {
     /// Returns `true` only if `self` is `True`
@@ -93,15 +111,13 @@ impl Tribool {
     }
 }
 
-impl Not for Tribool {
-    type Output = Tribool;
-
-    fn not(self) -> Tribool {
-        match self {
-            True => False,
-            False => True,
-            _ => Indeterminate,
-        }
+impl Display for Tribool {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        Display::fmt(match *self {
+            True => "True",
+            False => "False",
+            Indeterminate => "Indeterminate",
+        }, f)
     }
 }
 
@@ -131,6 +147,149 @@ impl PartialEq<bool> for Tribool {
     }
 }
 
+impl PartialEq<Tribool> for bool {
+    #[inline]
+    fn eq(&self, rhs: &Tribool) -> bool {
+        *rhs == *self
+    }
+
+    #[inline]
+    fn ne(&self, rhs: &Tribool) -> bool {
+        *rhs != *self
+    }
+}
+
+use std::cmp::Ordering;
+
+impl PartialOrd<Self> for Tribool {
+    fn partial_cmp(&self, rhs: &Tribool) -> Option<Ordering> {
+        match (*self, *rhs) {
+            (Indeterminate, _) | (_, Indeterminate) => None,
+            (True, False) => Some(Ordering::Greater),
+            (False, True) => Some(Ordering::Less),
+            (True, True) | (False, False) => Some(Ordering::Equal)
+        }
+    }
+
+    fn lt(&self, rhs: &Tribool) -> bool {
+        match (*self, *rhs) {
+            (False, True) => true,
+            _ => false,
+        }
+    }
+
+    fn le(&self, rhs: &Tribool) -> bool {
+        match (*self, *rhs) {
+            (True, True) | (False, False) | (False, True) => true,
+            _ => false,
+        }
+    }
+
+    fn gt(&self, rhs: &Tribool) -> bool {
+        match (*self, *rhs) {
+            (True, False) => true,
+            _ => false,
+        }
+    }
+
+    fn ge(&self, rhs: &Tribool) -> bool {
+        match (*self, *rhs) {
+            (True, True) | (False, False) | (True, False) => true,
+            _ => false,
+        }
+    }
+}
+
+impl PartialOrd<bool> for Tribool {
+    fn partial_cmp(&self, rhs: &bool) -> Option<Ordering> {
+        match (*self, *rhs) {
+            (Indeterminate, _) => None,
+            (True, false) => Some(Ordering::Greater),
+            (False, true) => Some(Ordering::Less),
+            (True, true) | (False, false) => Some(Ordering::Equal)
+        }
+    }
+
+    fn lt(&self, rhs: &bool) -> bool {
+        match (*self, *rhs) {
+            (False, true) => true,
+            _ => false,
+        }
+    }
+
+    fn le(&self, rhs: &bool) -> bool {
+        match (*self, *rhs) {
+            (True, true) | (False, false) | (False, true) => true,
+            _ => false,
+        }
+    }
+
+    fn gt(&self, rhs: &bool) -> bool {
+        match (*self, *rhs) {
+            (True, false) => true,
+            _ => false,
+        }
+    }
+
+    fn ge(&self, rhs: &bool) -> bool {
+        match (*self, *rhs) {
+            (True, true) | (False, false) | (True, false) => true,
+            _ => false,
+        }
+    }
+}
+
+impl PartialOrd<Tribool> for bool {
+    fn partial_cmp(&self, rhs: &Tribool) -> Option<Ordering> {
+        match (*self, *rhs) {
+            (_, Indeterminate) => None,
+            (true, False) => Some(Ordering::Greater),
+            (false, True) => Some(Ordering::Less),
+            (true, True) | (false, False) => Some(Ordering::Equal)
+        }
+    }
+
+    fn lt(&self, rhs: &Tribool) -> bool {
+        match (*self, *rhs) {
+            (false, True) => true,
+            _ => false,
+        }
+    }
+
+    fn le(&self, rhs: &Tribool) -> bool {
+        match (*self, *rhs) {
+            (true, True) | (false, False) | (false, True) => true,
+            _ => false,
+        }
+    }
+
+    fn gt(&self, rhs: &Tribool) -> bool {
+        match (*self, *rhs) {
+            (true, False) => true,
+            _ => false,
+        }
+    }
+
+    fn ge(&self, rhs: &Tribool) -> bool {
+        match (*self, *rhs) {
+            (true, True) | (false, False) | (true, False) => true,
+            _ => false,
+        }
+    }
+}
+
+impl Not for Tribool {
+    type Output = Tribool;
+
+    fn not(self) -> Tribool {
+        match self {
+            True => False,
+            False => True,
+            _ => Indeterminate,
+        }
+    }
+}
+
 impl BitAnd<Self> for Tribool {
     type Output = Tribool;
 
@@ -155,24 +314,6 @@ impl BitOr<Self> for Tribool {
     }
 }
 
-impl BitAnd<bool> for Tribool {
-    type Output = Tribool;
-
-    #[inline]
-    fn bitand(self, rhs: bool) -> Tribool {
-        self.bitand(Tribool::from(rhs))
-    }
-}
-
-impl BitOr<bool> for Tribool {
-    type Output = Tribool;
-
-    #[inline]
-    fn bitor(self, rhs: bool) -> Tribool {
-        self.bitor(Tribool::from(rhs))
-    }
-}
-
 impl BitXor<Self> for Tribool {
     type Output = Tribool;
 
@@ -181,14 +322,52 @@ impl BitXor<Self> for Tribool {
     }
 }
 
-impl BitXor<bool> for Tribool {
-    type Output = Tribool;
+macro_rules! impl_binary_op {
+    ($op:ident => $f:ident, $assign_op:ident => $af:ident) => {
+        impl $op<bool> for Tribool {
+            type Output = Tribool;
 
-    #[inline]
-    fn bitxor(self, rhs: bool) -> Tribool {
-        self.bitxor(Tribool::from(rhs))
+            #[inline]
+            fn $f(self, rhs: bool) -> Tribool {
+                self.$f(Tribool::from(rhs))
+            }
+        }
+
+        impl $op<Tribool> for bool {
+            type Output = Tribool;
+
+            #[inline]
+            fn $f(self, rhs: Tribool) -> Tribool {
+                rhs.$f(self)
+            }
+        }
+
+        impl $assign_op<Self> for Tribool {
+            #[inline]
+            fn $af(&mut self, rhs: Tribool) {
+                *self = self.$f(rhs);
+            }
+        }
+
+        impl $assign_op<bool> for Tribool {
+            #[inline]
+            fn $af(&mut self, rhs: bool) {
+                *self = self.$f(rhs);
+            }
+        }
+
+        impl $assign_op<Tribool> for bool {
+            #[inline]
+            fn $af(&mut self, rhs: Tribool) {
+                *self = rhs.$f(*self).is_true()
+            }
+        }
     }
 }
+
+impl_binary_op!(BitAnd => bitand, BitAndAssign => bitand_assign);
+impl_binary_op!(BitOr => bitor, BitOrAssign => bitor_assign);
+impl_binary_op!(BitXor => bitxor, BitXorAssign => bitxor_assign);
 
 impl From<bool> for Tribool {
     #[inline]
@@ -203,6 +382,68 @@ impl From<Tribool> for bool {
         value.is_true()
     }
 }
+
+// implements the unary operator "op &T"
+// based on "op T" where T is expected to be `Copy`able
+macro_rules! forward_ref_unop {
+    (impl $imp:ident, $method:ident for $t:ty) => {
+        impl<'a> $imp for &'a $t {
+            type Output = <$t as $imp>::Output;
+
+            #[inline]
+            fn $method(self) -> <$t as $imp>::Output {
+                $imp::$method(*self)
+            }
+        }
+    }
+}
+
+// implements binary operators "&T op U", "T op &U", "&T op &U"
+// based on "T op U" where T and U are expected to be `Copy`able
+macro_rules! forward_ref_binop {
+    (impl $imp:ident, $method:ident for $t:ty, $u:ty) => {
+        impl<'a> $imp<$u> for &'a $t {
+            type Output = <$t as $imp<$u>>::Output;
+
+            #[inline]
+            fn $method(self, other: $u) -> <$t as $imp<$u>>::Output {
+                $imp::$method(*self, other)
+            }
+        }
+
+        impl<'a> $imp<&'a $u> for $t {
+            type Output = <$t as $imp<$u>>::Output;
+
+            #[inline]
+            fn $method(self, other: &'a $u) -> <$t as $imp<$u>>::Output {
+                $imp::$method(self, *other)
+            }
+        }
+
+        impl<'a, 'b> $imp<&'a $u> for &'b $t {
+            type Output = <$t as $imp<$u>>::Output;
+
+            #[inline]
+            fn $method(self, other: &'a $u) -> <$t as $imp<$u>>::Output {
+                $imp::$method(*self, *other)
+            }
+        }
+    }
+}
+
+forward_ref_unop!(impl Not, not for Tribool);
+
+forward_ref_binop!(impl BitAnd, bitand for Tribool, Tribool);
+forward_ref_binop!(impl BitOr, bitor for Tribool, Tribool);
+forward_ref_binop!(impl BitXor, bitxor for Tribool, Tribool);
+
+forward_ref_binop!(impl BitAnd, bitand for Tribool, bool);
+forward_ref_binop!(impl BitOr, bitor for Tribool, bool);
+forward_ref_binop!(impl BitXor, bitxor for Tribool, bool);
+
+forward_ref_binop!(impl BitAnd, bitand for bool, Tribool);
+forward_ref_binop!(impl BitOr, bitor for bool, Tribool);
+forward_ref_binop!(impl BitXor, bitxor for bool, Tribool);
 
 #[cfg(test)]
 mod test {
@@ -231,6 +472,56 @@ mod test {
         assert!(False != true);
         assert!(!(Indeterminate != true));
         assert!(!(Indeterminate != false));
+    }
+
+    #[test]
+    fn ordering() {
+        assert!(True > False);
+        assert!(True >= False);
+        assert!(False < True);
+        assert!(False <= True);
+        assert!(False <= False);
+        assert!(False >= False);
+        assert!(True <= True);
+        assert!(True >= True);
+
+        assert!(!(True > True));
+        assert!(!(False > True));
+        assert!(!(False > False));
+
+        assert!(!(Indeterminate < True));
+        assert!(!(Indeterminate < False));
+        assert!(!(Indeterminate <= True));
+        assert!(!(Indeterminate <= False));
+        assert!(!(Indeterminate > True));
+        assert!(!(Indeterminate > False));
+        assert!(!(Indeterminate >= True));
+        assert!(!(Indeterminate >= False));
+    }
+
+    #[test]
+    fn bool_ordering() {
+        assert!(True > false);
+        assert!(True >= false);
+        assert!(False < true);
+        assert!(False <= true);
+        assert!(False <= false);
+        assert!(False >= false);
+        assert!(True <= true);
+        assert!(True >= true);
+
+        assert!(!(True > true));
+        assert!(!(False > true));
+        assert!(!(False > false));
+
+        assert!(!(Indeterminate < true));
+        assert!(!(Indeterminate < false));
+        assert!(!(Indeterminate <= true));
+        assert!(!(Indeterminate <= false));
+        assert!(!(Indeterminate > true));
+        assert!(!(Indeterminate > false));
+        assert!(!(Indeterminate >= true));
+        assert!(!(Indeterminate >= false));
     }
 
     #[test]
