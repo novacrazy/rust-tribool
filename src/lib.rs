@@ -89,10 +89,10 @@ impl Tribool {
 
     /// Material implication using Kleene Logic.
     ///
-    /// This is equivalent to the `OR` operation.
+    /// This is equivalent to `NOT(A) OR B`.
     #[inline]
     pub fn kleene_implication(self, b: Tribool) -> Tribool {
-        self | b
+        !self | b
     }
 
     /// Material implication using Łukasiewicz Logic
@@ -567,6 +567,21 @@ mod test {
         assert!((True ^ False).is_true());
         assert!((True ^ Indeterminate).is_indeterminate());
         assert!((True ^ True).is_false());
+    }
+
+    #[test]
+    fn kleen() {
+        assert!(True.kleene_implication(True).is_true());
+        assert!(Indeterminate.kleene_implication(True).is_true());
+        assert!(False.kleene_implication(True).is_true());
+
+        assert!(True.kleene_implication(Indeterminate).is_indeterminate());
+        assert!(Indeterminate.kleene_implication(Indeterminate).is_indeterminate());
+        assert!(False.kleene_implication(Indeterminate).is_true());
+
+        assert!(True.kleene_implication(False).is_false());
+        assert!(Indeterminate.kleene_implication(False).is_indeterminate());
+        assert!(False.kleene_implication(False).is_true());
     }
 
     #[test]
