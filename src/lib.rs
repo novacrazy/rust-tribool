@@ -28,7 +28,7 @@ pub use Tribool::{True, False, Indeterminate};
 
 impl Default for Tribool {
     #[inline]
-    fn default() -> Tribool { Tribool::False }
+    fn default() -> Tribool { False }
 }
 
 impl FromStr for Tribool {
@@ -121,29 +121,15 @@ impl Display for Tribool {
     }
 }
 
-impl PartialEq<Self> for Tribool {
+impl<B: Into<Tribool> + Copy> PartialEq<B> for Tribool {
     #[inline]
-    fn eq(&self, rhs: &Tribool) -> bool {
-        self.equals(*rhs).is_true()
+    fn eq(&self, rhs: &B) -> bool {
+        self.equals((*rhs).into()).is_true()
     }
 
     #[inline]
-    fn ne(&self, rhs: &Tribool) -> bool {
-        self.not_equals(*rhs).is_true()
-    }
-}
-
-impl Eq for Tribool {}
-
-impl PartialEq<bool> for Tribool {
-    #[inline]
-    fn eq(&self, rhs: &bool) -> bool {
-        self.equals(Tribool::from(*rhs)).is_true()
-    }
-
-    #[inline]
-    fn ne(&self, rhs: &bool) -> bool {
-        self.not_equals(Tribool::from(*rhs)).is_true()
+    fn ne(&self, rhs: &B) -> bool {
+        self.not_equals((*rhs).into()).is_true()
     }
 }
 
@@ -161,9 +147,9 @@ impl PartialEq<Tribool> for bool {
 
 use std::cmp::Ordering;
 
-impl PartialOrd<Self> for Tribool {
-    fn partial_cmp(&self, rhs: &Tribool) -> Option<Ordering> {
-        match (*self, *rhs) {
+impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
+    fn partial_cmp(&self, rhs: &B) -> Option<Ordering> {
+        match (*self, (*rhs).into()) {
             (Indeterminate, _) | (_, Indeterminate) => None,
             (True, False) => Some(Ordering::Greater),
             (False, True) => Some(Ordering::Less),
@@ -171,108 +157,30 @@ impl PartialOrd<Self> for Tribool {
         }
     }
 
-    fn lt(&self, rhs: &Tribool) -> bool {
-        match (*self, *rhs) {
+    fn lt(&self, rhs: &B) -> bool {
+        match (*self, (*rhs).into()) {
             (False, True) => true,
             _ => false,
         }
     }
 
-    fn le(&self, rhs: &Tribool) -> bool {
-        match (*self, *rhs) {
+    fn le(&self, rhs: &B) -> bool {
+        match (*self, (*rhs).into()) {
             (True, True) | (False, False) | (False, True) => true,
             _ => false,
         }
     }
 
-    fn gt(&self, rhs: &Tribool) -> bool {
-        match (*self, *rhs) {
+    fn gt(&self, rhs: &B) -> bool {
+        match (*self, (*rhs).into()) {
             (True, False) => true,
             _ => false,
         }
     }
 
-    fn ge(&self, rhs: &Tribool) -> bool {
-        match (*self, *rhs) {
+    fn ge(&self, rhs: &B) -> bool {
+        match (*self, (*rhs).into()) {
             (True, True) | (False, False) | (True, False) => true,
-            _ => false,
-        }
-    }
-}
-
-impl PartialOrd<bool> for Tribool {
-    fn partial_cmp(&self, rhs: &bool) -> Option<Ordering> {
-        match (*self, *rhs) {
-            (Indeterminate, _) => None,
-            (True, false) => Some(Ordering::Greater),
-            (False, true) => Some(Ordering::Less),
-            (True, true) | (False, false) => Some(Ordering::Equal)
-        }
-    }
-
-    fn lt(&self, rhs: &bool) -> bool {
-        match (*self, *rhs) {
-            (False, true) => true,
-            _ => false,
-        }
-    }
-
-    fn le(&self, rhs: &bool) -> bool {
-        match (*self, *rhs) {
-            (True, true) | (False, false) | (False, true) => true,
-            _ => false,
-        }
-    }
-
-    fn gt(&self, rhs: &bool) -> bool {
-        match (*self, *rhs) {
-            (True, false) => true,
-            _ => false,
-        }
-    }
-
-    fn ge(&self, rhs: &bool) -> bool {
-        match (*self, *rhs) {
-            (True, true) | (False, false) | (True, false) => true,
-            _ => false,
-        }
-    }
-}
-
-impl PartialOrd<Tribool> for bool {
-    fn partial_cmp(&self, rhs: &Tribool) -> Option<Ordering> {
-        match (*self, *rhs) {
-            (_, Indeterminate) => None,
-            (true, False) => Some(Ordering::Greater),
-            (false, True) => Some(Ordering::Less),
-            (true, True) | (false, False) => Some(Ordering::Equal)
-        }
-    }
-
-    fn lt(&self, rhs: &Tribool) -> bool {
-        match (*self, *rhs) {
-            (false, True) => true,
-            _ => false,
-        }
-    }
-
-    fn le(&self, rhs: &Tribool) -> bool {
-        match (*self, *rhs) {
-            (true, True) | (false, False) | (false, True) => true,
-            _ => false,
-        }
-    }
-
-    fn gt(&self, rhs: &Tribool) -> bool {
-        match (*self, *rhs) {
-            (true, False) => true,
-            _ => false,
-        }
-    }
-
-    fn ge(&self, rhs: &Tribool) -> bool {
-        match (*self, *rhs) {
-            (true, True) | (false, False) | (true, False) => true,
             _ => false,
         }
     }
@@ -290,11 +198,11 @@ impl Not for Tribool {
     }
 }
 
-impl BitAnd<Self> for Tribool {
+impl<B: Into<Tribool>> BitAnd<B> for Tribool {
     type Output = Tribool;
 
-    fn bitand(self, rhs: Tribool) -> Tribool {
-        match (self, rhs) {
+    fn bitand(self, rhs: B) -> Tribool {
+        match (self, rhs.into()) {
             (True, True) => True,
             (False, _) | (_, False) => False,
             _ => Indeterminate
@@ -302,11 +210,11 @@ impl BitAnd<Self> for Tribool {
     }
 }
 
-impl BitOr<Self> for Tribool {
+impl<B: Into<Tribool>> BitOr<B> for Tribool {
     type Output = Tribool;
 
-    fn bitor(self, rhs: Tribool) -> Tribool {
-        match (self, rhs) {
+    fn bitor(self, rhs: B) -> Tribool {
+        match (self, rhs.into()) {
             (False, False) => False,
             (True, _) | (_, True) => True,
             _ => Indeterminate
@@ -314,25 +222,17 @@ impl BitOr<Self> for Tribool {
     }
 }
 
-impl BitXor<Self> for Tribool {
+impl<B: Into<Tribool>> BitXor<B> for Tribool {
     type Output = Tribool;
 
-    fn bitxor(self, rhs: Tribool) -> Tribool {
+    fn bitxor(self, rhs: B) -> Tribool {
+        let rhs = rhs.into();
         (self | rhs) & !(self & rhs)
     }
 }
 
 macro_rules! impl_binary_op {
     ($op:ident => $f:ident, $assign_op:ident => $af:ident) => {
-        impl $op<bool> for Tribool {
-            type Output = Tribool;
-
-            #[inline]
-            fn $f(self, rhs: bool) -> Tribool {
-                self.$f(Tribool::from(rhs))
-            }
-        }
-
         impl $op<Tribool> for bool {
             type Output = Tribool;
 
@@ -342,17 +242,10 @@ macro_rules! impl_binary_op {
             }
         }
 
-        impl $assign_op<Self> for Tribool {
+        impl<B: Into<Tribool>> $assign_op<B> for Tribool {
             #[inline]
-            fn $af(&mut self, rhs: Tribool) {
-                *self = self.$f(rhs);
-            }
-        }
-
-        impl $assign_op<bool> for Tribool {
-            #[inline]
-            fn $af(&mut self, rhs: bool) {
-                *self = self.$f(rhs);
+            fn $af(&mut self, rhs: B) {
+                *self = self.$f(rhs.into());
             }
         }
 
