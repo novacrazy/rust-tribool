@@ -1,6 +1,6 @@
 [package]
 name = "tribool"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Aaron Trent <novacrazy@gmail.com>"]
 description = "Tribool - Three-valued logic"
 documentation = "https://docs.rs/tribool/"
