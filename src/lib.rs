@@ -50,6 +50,14 @@ impl FromStr for Tribool {
 
 impl Tribool {
     /// Returns `true` only if `self` is `True`
+    ///
+    /// # Example
+    /// ```
+    /// # use tribool::Tribool;
+    /// # fn main() {
+    /// assert!(Tribool::True.is_true())
+    /// # }
+    /// ```
     #[inline]
     pub fn is_true(self) -> bool {
         match self {
@@ -59,6 +67,14 @@ impl Tribool {
     }
 
     /// Returns `true` only if `self` is `False`
+    ///
+    /// # Example
+    /// ```
+    /// # use tribool::Tribool;
+    /// # fn main() {
+    /// assert!(Tribool::False.is_false())
+    /// # }
+    /// ```
     #[inline]
     pub fn is_false(self) -> bool {
         match self {
@@ -68,6 +84,14 @@ impl Tribool {
     }
 
     /// Returns `true` only if `self` is `Indeterminate`
+    ///
+    /// # Example
+    /// ```
+    /// # use tribool::Tribool;
+    /// # fn main() {
+    /// assert!(Tribool::Indeterminate.is_indeterminate())
+    /// # }
+    /// ```
     #[inline]
     pub fn is_indeterminate(self) -> bool {
         match self {
@@ -78,6 +102,16 @@ impl Tribool {
 
     /// Checks for equality of two `Tribool`s,
     /// returning `Indeterminate` if either are indeterminate.
+    ///
+    /// # Example
+    /// ```
+    /// # use tribool::Tribool;
+    /// # fn main() {
+    /// assert!(Tribool::True.equals(Tribool::True).is_true());
+    /// assert!(Tribool::True.equals(Tribool::False).is_false());
+    /// assert!(Tribool::Indeterminate.equals(Tribool::False).is_indeterminate())
+    /// # }
+    /// ```
     #[inline]
     pub fn equals(self, rhs: Tribool) -> Tribool {
         match (self, rhs) {
@@ -89,6 +123,16 @@ impl Tribool {
 
     /// Checks for inequality of two `Tribool`s,
     /// returning `Indeterminate` if either are indeterminate.
+    ///
+    /// # Example
+    /// ```
+    /// # use tribool::Tribool;
+    /// # fn main() {
+    /// assert!(Tribool::True.not_equals(Tribool::True).is_false());
+    /// assert!(Tribool::True.not_equals(Tribool::False).is_true());
+    /// assert!(Tribool::Indeterminate.not_equals(Tribool::False).is_indeterminate())
+    /// # }
+    /// ```
     #[inline]
     pub fn not_equals(self, rhs: Tribool) -> Tribool {
         match (self, rhs) {
