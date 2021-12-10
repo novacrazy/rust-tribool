@@ -39,6 +39,7 @@ impl Default for Tribool {
 impl FromStr for Tribool {
     type Err = ();
 
+    #[inline]
     fn from_str(s: &str) -> Result<Tribool, ()> {
         Ok(match bool::from_str(s) {
             Ok(b) => Tribool::from(b),
@@ -49,6 +50,7 @@ impl FromStr for Tribool {
 
 impl Tribool {
     /// Returns `true` only if `self` is `True`
+    #[inline]
     pub fn is_true(self) -> bool {
         match self {
             True => true,
@@ -57,6 +59,7 @@ impl Tribool {
     }
 
     /// Returns `true` only if `self` is `False`
+    #[inline]
     pub fn is_false(self) -> bool {
         match self {
             False => true,
@@ -65,6 +68,7 @@ impl Tribool {
     }
 
     /// Returns `true` only if `self` is `Indeterminate`
+    #[inline]
     pub fn is_indeterminate(self) -> bool {
         match self {
             Indeterminate => true,
@@ -74,6 +78,7 @@ impl Tribool {
 
     /// Checks for equality of two `Tribool`s,
     /// returning `Indeterminate` if either are indeterminate.
+    #[inline]
     pub fn equals(self, rhs: Tribool) -> Tribool {
         match (self, rhs) {
             (False, False) | (True, True) => True,
@@ -84,6 +89,7 @@ impl Tribool {
 
     /// Checks for inequality of two `Tribool`s,
     /// returning `Indeterminate` if either are indeterminate.
+    #[inline]
     pub fn not_equals(self, rhs: Tribool) -> Tribool {
         match (self, rhs) {
             (False, False) | (True, True) => False,
@@ -106,6 +112,7 @@ impl Tribool {
     /// but differs in its definition of implication in that "unknown implies unknown" is true.
     ///
     /// For more information, see [the Wikipedia page and the section on Łukasiewicz Logic](https://en.wikipedia.org/wiki/Three-valued_logic#.C5.81ukasiewicz_logic)
+    #[inline]
     pub fn lukasiewicz_implication(self, b: Tribool) -> Tribool {
         match (self, b) {
             (True, Indeterminate) | (Indeterminate, False) => Indeterminate,
@@ -117,6 +124,7 @@ impl Tribool {
 }
 
 impl Display for Tribool {
+    #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         Display::fmt(
             match *self {
@@ -156,6 +164,7 @@ impl PartialEq<Tribool> for bool {
 use std::cmp::Ordering;
 
 impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
+    #[inline]
     fn partial_cmp(&self, rhs: &B) -> Option<Ordering> {
         match (*self, (*rhs).into()) {
             (Indeterminate, _) | (_, Indeterminate) => None,
@@ -165,6 +174,7 @@ impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
         }
     }
 
+    #[inline]
     fn lt(&self, rhs: &B) -> bool {
         match (*self, (*rhs).into()) {
             (False, True) => true,
@@ -172,6 +182,7 @@ impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
         }
     }
 
+    #[inline]
     fn le(&self, rhs: &B) -> bool {
         match (*self, (*rhs).into()) {
             (True, True) | (False, False) | (False, True) => true,
@@ -179,6 +190,7 @@ impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
         }
     }
 
+    #[inline]
     fn gt(&self, rhs: &B) -> bool {
         match (*self, (*rhs).into()) {
             (True, False) => true,
@@ -186,6 +198,7 @@ impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
         }
     }
 
+    #[inline]
     fn ge(&self, rhs: &B) -> bool {
         match (*self, (*rhs).into()) {
             (True, True) | (False, False) | (True, False) => true,
@@ -197,6 +210,7 @@ impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
 impl Not for Tribool {
     type Output = Tribool;
 
+    #[inline]
     fn not(self) -> Tribool {
         match self {
             True => False,
@@ -209,6 +223,7 @@ impl Not for Tribool {
 impl<B: Into<Tribool>> BitAnd<B> for Tribool {
     type Output = Tribool;
 
+    #[inline]
     fn bitand(self, rhs: B) -> Tribool {
         match (self, rhs.into()) {
             (True, True) => True,
@@ -221,6 +236,7 @@ impl<B: Into<Tribool>> BitAnd<B> for Tribool {
 impl<B: Into<Tribool>> BitOr<B> for Tribool {
     type Output = Tribool;
 
+    #[inline]
     fn bitor(self, rhs: B) -> Tribool {
         match (self, rhs.into()) {
             (False, False) => False,
@@ -233,6 +249,7 @@ impl<B: Into<Tribool>> BitOr<B> for Tribool {
 impl<B: Into<Tribool>> BitXor<B> for Tribool {
     type Output = Tribool;
 
+    #[inline]
     fn bitxor(self, rhs: B) -> Tribool {
         let rhs = rhs.into();
         (self | rhs) & !(self & rhs)
