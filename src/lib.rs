@@ -9,9 +9,12 @@
 //! For more information and the full truth tables of this implementation, see
 //! [the Wikipedia page](https://en.wikipedia.org/wiki/Three-valued_logic)
 
-use std::ops::{Not, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign};
-use std::str::FromStr;
+#[cfg(feature = "serde-impl")]
+mod serde;
+
 use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
+use std::str::FromStr;
 
 /// Three-state Boolean logic
 #[derive(Debug, Clone, Copy, Hash)]
@@ -490,5 +493,25 @@ mod test {
         assert!(True.lukasiewicz_implication(False).is_false());
         assert!(Indeterminate.lukasiewicz_implication(False).is_indeterminate());
         assert!(False.lukasiewicz_implication(False).is_true());
+    }
+
+    #[test]
+    fn serde() {
+        let res_false = serde_json::to_string_pretty(&Tribool::False)
+            .expect("serde Serialize impl for False failed");
+        let res_true = serde_json::to_string_pretty(&Tribool::True)
+            .expect("serde Serialize impl for True failed");
+        let res_none = serde_json::to_string_pretty(&Tribool::Indeterminate)
+            .expect("serde Serialize impl for Indeterminate failed");
+
+        assert!(serde_json::from_str::<Tribool>(&res_false)
+            .expect("serde Deserialize impl for False failed")
+            .is_false());
+        assert!(serde_json::from_str::<Tribool>(&res_true)
+            .expect("serde Deserialize impl for True failed")
+            .is_true());
+        assert!(serde_json::from_str::<Tribool>(&res_none)
+            .expect("serde Deserialize impl for Indeterminate failed")
+            .is_indeterminate())
     }
 }
