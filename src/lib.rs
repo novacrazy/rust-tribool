@@ -27,11 +27,13 @@ pub enum Tribool {
     Indeterminate,
 }
 
-pub use Tribool::{True, False, Indeterminate};
+pub use Tribool::{False, Indeterminate, True};
 
 impl Default for Tribool {
     #[inline]
-    fn default() -> Tribool { False }
+    fn default() -> Tribool {
+        False
+    }
 }
 
 impl FromStr for Tribool {
@@ -40,7 +42,7 @@ impl FromStr for Tribool {
     fn from_str(s: &str) -> Result<Tribool, ()> {
         Ok(match bool::from_str(s) {
             Ok(b) => Tribool::from(b),
-            _ => Indeterminate
+            _ => Indeterminate,
         })
     }
 }
@@ -76,7 +78,7 @@ impl Tribool {
         match (self, rhs) {
             (False, False) | (True, True) => True,
             (False, True) | (True, False) => False,
-            _ => Indeterminate
+            _ => Indeterminate,
         }
     }
 
@@ -86,7 +88,7 @@ impl Tribool {
         match (self, rhs) {
             (False, False) | (True, True) => False,
             (False, True) | (True, False) => True,
-            _ => Indeterminate
+            _ => Indeterminate,
         }
     }
 
@@ -116,11 +118,14 @@ impl Tribool {
 
 impl Display for Tribool {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        Display::fmt(match *self {
-            True => "True",
-            False => "False",
-            Indeterminate => "Indeterminate",
-        }, f)
+        Display::fmt(
+            match *self {
+                True => "True",
+                False => "False",
+                Indeterminate => "Indeterminate",
+            },
+            f,
+        )
     }
 }
 
@@ -156,7 +161,7 @@ impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
             (Indeterminate, _) | (_, Indeterminate) => None,
             (True, False) => Some(Ordering::Greater),
             (False, True) => Some(Ordering::Less),
-            (True, True) | (False, False) => Some(Ordering::Equal)
+            (True, True) | (False, False) => Some(Ordering::Equal),
         }
     }
 
@@ -208,7 +213,7 @@ impl<B: Into<Tribool>> BitAnd<B> for Tribool {
         match (self, rhs.into()) {
             (True, True) => True,
             (False, _) | (_, False) => False,
-            _ => Indeterminate
+            _ => Indeterminate,
         }
     }
 }
@@ -220,7 +225,7 @@ impl<B: Into<Tribool>> BitOr<B> for Tribool {
         match (self, rhs.into()) {
             (False, False) => False,
             (True, _) | (_, True) => True,
-            _ => Indeterminate
+            _ => Indeterminate,
         }
     }
 }
@@ -258,7 +263,7 @@ macro_rules! impl_binary_op {
                 *self = rhs.$f(*self).is_true()
             }
         }
-    }
+    };
 }
 
 impl_binary_op!(BitAnd => bitand, BitAndAssign => bitand_assign);
@@ -268,7 +273,11 @@ impl_binary_op!(BitXor => bitxor, BitXorAssign => bitxor_assign);
 impl From<bool> for Tribool {
     #[inline]
     fn from(value: bool) -> Tribool {
-        if value { True } else { False }
+        if value {
+            True
+        } else {
+            False
+        }
     }
 }
 
@@ -291,7 +300,7 @@ macro_rules! forward_ref_unop {
                 $imp::$method(*self)
             }
         }
-    }
+    };
 }
 
 // implements binary operators "&T op U", "T op &U", "&T op &U"
@@ -324,7 +333,7 @@ macro_rules! forward_ref_binop {
                 $imp::$method(*self, *other)
             }
         }
-    }
+    };
 }
 
 forward_ref_unop!(impl Not, not for Tribool);
@@ -347,10 +356,10 @@ mod test {
 
     #[test]
     fn equality() {
-        assert!(True == True);
-        assert!(True != False);
-        assert!(False != True);
-        assert!(False == False);
+        assert_eq!(True, True);
+        assert_ne!(True, False);
+        assert_ne!(False, True);
+        assert_eq!(False, False);
 
         assert!(!(Indeterminate == True));
         assert!(!(Indeterminate == False));
@@ -362,10 +371,10 @@ mod test {
 
     #[test]
     fn bool_equality() {
-        assert!(True == true);
-        assert!(False == false);
-        assert!(True != false);
-        assert!(False != true);
+        assert_eq!(True, true);
+        assert_eq!(False, false);
+        assert_ne!(True, false);
+        assert_ne!(False, true);
         assert!(!(Indeterminate != true));
         assert!(!(Indeterminate != false));
     }
@@ -466,13 +475,15 @@ mod test {
     }
 
     #[test]
-    fn kleen() {
+    fn kleene() {
         assert!(True.kleene_implication(True).is_true());
         assert!(Indeterminate.kleene_implication(True).is_true());
         assert!(False.kleene_implication(True).is_true());
 
         assert!(True.kleene_implication(Indeterminate).is_indeterminate());
-        assert!(Indeterminate.kleene_implication(Indeterminate).is_indeterminate());
+        assert!(Indeterminate
+            .kleene_implication(Indeterminate)
+            .is_indeterminate());
         assert!(False.kleene_implication(Indeterminate).is_true());
 
         assert!(True.kleene_implication(False).is_false());
@@ -486,12 +497,18 @@ mod test {
         assert!(Indeterminate.lukasiewicz_implication(True).is_true());
         assert!(False.lukasiewicz_implication(True).is_true());
 
-        assert!(True.lukasiewicz_implication(Indeterminate).is_indeterminate());
-        assert!(Indeterminate.lukasiewicz_implication(Indeterminate).is_true());
+        assert!(True
+            .lukasiewicz_implication(Indeterminate)
+            .is_indeterminate());
+        assert!(Indeterminate
+            .lukasiewicz_implication(Indeterminate)
+            .is_true());
         assert!(False.lukasiewicz_implication(Indeterminate).is_true());
 
         assert!(True.lukasiewicz_implication(False).is_false());
-        assert!(Indeterminate.lukasiewicz_implication(False).is_indeterminate());
+        assert!(Indeterminate
+            .lukasiewicz_implication(False)
+            .is_indeterminate());
         assert!(False.lukasiewicz_implication(False).is_true());
     }
 
