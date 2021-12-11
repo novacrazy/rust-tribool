@@ -9,7 +9,7 @@
 //! For more information and the full truth tables of this implementation, see
 //! [the Wikipedia page](https://en.wikipedia.org/wiki/Three-valued_logic)
 
-#[cfg(feature = "serde-impl")]
+#[cfg(feature = "serde")]
 mod serde;
 
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -42,13 +42,22 @@ impl FromStr for Tribool {
     #[inline]
     fn from_str(s: &str) -> Result<Tribool, ()> {
         Ok(match bool::from_str(s) {
-            Ok(b) => Tribool::from(b),
+            Ok(value) => Tribool::boolean(value),
             _ => Indeterminate,
         })
     }
 }
 
 impl Tribool {
+    /// Construct a new non-indeterminate Tribool from a regular boolean value
+    #[inline]
+    pub const fn boolean(value: bool) -> Tribool {
+        match value {
+            true => True,
+            false => False,
+        }
+    }
+
     /// Returns `true` only if `self` is `True`
     ///
     /// # Example
@@ -59,7 +68,7 @@ impl Tribool {
     /// # }
     /// ```
     #[inline]
-    pub fn is_true(self) -> bool {
+    pub const fn is_true(self) -> bool {
         match self {
             True => true,
             _ => false,
@@ -76,7 +85,7 @@ impl Tribool {
     /// # }
     /// ```
     #[inline]
-    pub fn is_false(self) -> bool {
+    pub const fn is_false(self) -> bool {
         match self {
             False => true,
             _ => false,
@@ -93,7 +102,7 @@ impl Tribool {
     /// # }
     /// ```
     #[inline]
-    pub fn is_indeterminate(self) -> bool {
+    pub const fn is_indeterminate(self) -> bool {
         match self {
             Indeterminate => true,
             _ => false,
@@ -113,7 +122,7 @@ impl Tribool {
     /// # }
     /// ```
     #[inline]
-    pub fn equals(self, rhs: Tribool) -> Tribool {
+    pub const fn equals(self, rhs: Tribool) -> Tribool {
         match (self, rhs) {
             (False, False) | (True, True) => True,
             (False, True) | (True, False) => False,
@@ -134,7 +143,7 @@ impl Tribool {
     /// # }
     /// ```
     #[inline]
-    pub fn not_equals(self, rhs: Tribool) -> Tribool {
+    pub const fn not_equals(self, rhs: Tribool) -> Tribool {
         match (self, rhs) {
             (False, False) | (True, True) => False,
             (False, True) | (True, False) => True,
@@ -146,8 +155,8 @@ impl Tribool {
     ///
     /// This is equivalent to `NOT(A) OR B`.
     #[inline]
-    pub fn kleene_implication(self, b: Tribool) -> Tribool {
-        !self | b
+    pub const fn kleene_implication(self, b: Tribool) -> Tribool {
+        self.negate().or(b) // !self | b
     }
 
     /// Material implication using Łukasiewicz Logic
@@ -165,19 +174,66 @@ impl Tribool {
             (_, True) | (_, Indeterminate) => True,
         }
     }
+
+    /// Logical conjunction
+    #[inline]
+    pub const fn and(self, rhs: Tribool) -> Tribool {
+        match (self, rhs) {
+            (True, True) => True,
+            (False, _) | (_, False) => False,
+            _ => Indeterminate,
+        }
+    }
+
+    /// Logical disjunction
+    #[inline]
+    pub const fn or(self, rhs: Tribool) -> Tribool {
+        match (self, rhs) {
+            (False, False) => False,
+            (True, _) | (_, True) => True,
+            _ => Indeterminate,
+        }
+    }
+
+    /// Logical exclusive disjunction
+    #[inline]
+    pub const fn xor(self, rhs: Tribool) -> Tribool {
+        // (self | rhs) & !(self & rhs)
+        self.or(rhs).and(self.and(rhs).negate())
+    }
+
+    /// Logical negation
+    #[inline]
+    pub const fn negate(self) -> Tribool {
+        match self {
+            True => False,
+            False => True,
+            _ => Indeterminate,
+        }
+    }
+
+    /// Compares two Tribools similarly to a `bool`, where `true` is greater than `false`
+    ///
+    /// Indeterminate values cannot be compared to order and therefore return `None`
+    #[inline]
+    pub const fn compare(self, rhs: Tribool) -> Option<Ordering> {
+        match (self, rhs) {
+            (Indeterminate, _) | (_, Indeterminate) => None,
+            (True, False) => Some(Ordering::Greater),
+            (False, True) => Some(Ordering::Less),
+            (True, True) | (False, False) => Some(Ordering::Equal),
+        }
+    }
 }
 
 impl Display for Tribool {
     #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        Display::fmt(
-            match *self {
-                True => "True",
-                False => "False",
-                Indeterminate => "Indeterminate",
-            },
-            f,
-        )
+        f.write_str(match self {
+            True => "True",
+            False => "False",
+            Indeterminate => "Indeterminate",
+        })
     }
 }
 
@@ -210,12 +266,7 @@ use std::cmp::Ordering;
 impl<B: Into<Tribool> + Copy> PartialOrd<B> for Tribool {
     #[inline]
     fn partial_cmp(&self, rhs: &B) -> Option<Ordering> {
-        match (*self, (*rhs).into()) {
-            (Indeterminate, _) | (_, Indeterminate) => None,
-            (True, False) => Some(Ordering::Greater),
-            (False, True) => Some(Ordering::Less),
-            (True, True) | (False, False) => Some(Ordering::Equal),
-        }
+        self.compare((*rhs).into())
     }
 
     #[inline]
@@ -256,11 +307,7 @@ impl Not for Tribool {
 
     #[inline]
     fn not(self) -> Tribool {
-        match self {
-            True => False,
-            False => True,
-            _ => Indeterminate,
-        }
+        self.negate()
     }
 }
 
@@ -269,11 +316,7 @@ impl<B: Into<Tribool>> BitAnd<B> for Tribool {
 
     #[inline]
     fn bitand(self, rhs: B) -> Tribool {
-        match (self, rhs.into()) {
-            (True, True) => True,
-            (False, _) | (_, False) => False,
-            _ => Indeterminate,
-        }
+        self.and(rhs.into())
     }
 }
 
@@ -282,11 +325,7 @@ impl<B: Into<Tribool>> BitOr<B> for Tribool {
 
     #[inline]
     fn bitor(self, rhs: B) -> Tribool {
-        match (self, rhs.into()) {
-            (False, False) => False,
-            (True, _) | (_, True) => True,
-            _ => Indeterminate,
-        }
+        self.or(rhs.into())
     }
 }
 
@@ -295,8 +334,7 @@ impl<B: Into<Tribool>> BitXor<B> for Tribool {
 
     #[inline]
     fn bitxor(self, rhs: B) -> Tribool {
-        let rhs = rhs.into();
-        (self | rhs) & !(self & rhs)
+        self.xor(rhs.into())
     }
 }
 
@@ -334,18 +372,34 @@ impl_binary_op!(BitXor => bitxor, BitXorAssign => bitxor_assign);
 impl From<bool> for Tribool {
     #[inline]
     fn from(value: bool) -> Tribool {
-        if value {
-            True
-        } else {
-            False
+        Tribool::boolean(value)
+    }
+}
+
+/// Error result of `bool::try_from(TriBool::Indeterminate)`
+#[derive(Debug, Clone, Copy)]
+pub struct IndeterminateError;
+
+impl TryFrom<Tribool> for bool {
+    type Error = IndeterminateError;
+
+    #[inline]
+    fn try_from(value: Tribool) -> Result<Self, Self::Error> {
+        match value {
+            True => Ok(true),
+            False => Ok(false),
+            Indeterminate => Err(IndeterminateError),
         }
     }
 }
 
-impl From<Tribool> for bool {
+impl From<Result<Tribool, IndeterminateError>> for Tribool {
     #[inline]
-    fn from(value: Tribool) -> bool {
-        value.is_true()
+    fn from(value: Result<Tribool, IndeterminateError>) -> Self {
+        match value {
+            Ok(t) => t,
+            Err(_) => Indeterminate,
+        }
     }
 }
 
@@ -573,6 +627,7 @@ mod test {
         assert!(False.lukasiewicz_implication(False).is_true());
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn serde() {
         let res_false = serde_json::to_string_pretty(&Tribool::False)
