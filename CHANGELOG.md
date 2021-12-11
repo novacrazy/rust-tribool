@@ -3,7 +3,7 @@ Changelog
 
 ## 0.3.0
 * Added `const` versions of all operators
-* Added serde support (#5) (`serde` feature)
+* Added serde support ([#5](https://github.com/novacrazy/rust-tribool/pull/5)) (`serde` feature)
 * Removed `impl From<TriBool> for bool` and replaced it with `impl TryFrom<TriBool> for bool`
     * Use `TriBool::is_true()` for the old `From` behavior
 
